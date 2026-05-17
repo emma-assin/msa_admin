@@ -1,5 +1,6 @@
 "use client";
 
+import { FirebaseError } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -127,26 +128,54 @@ export default function Home() {
     setEditingId(null);
   };
 
+  const getAuthErrorMessage = (error: unknown) => {
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "(unknown project)";
+
+    if (!(error instanceof FirebaseError)) {
+      return error instanceof Error
+        ? error.message
+        : "Sign-in failed. Check credentials and Firebase settings.";
+    }
+
+    switch (error.code) {
+      case "auth/operation-not-allowed":
+        return `Email/password sign-in is disabled for Firebase project ${projectId}. In Firebase Console, open Authentication > Sign-in method and enable Email/Password.`;
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+        return "Invalid email or password.";
+      case "auth/invalid-email":
+        return "Enter a valid email address.";
+      case "auth/weak-password":
+        return "Password must be at least 6 characters.";
+      case "auth/email-already-in-use":
+        return "This account already exists. Sign in with the existing password.";
+      default:
+        return error.message || "Sign-in failed. Check credentials and Firebase settings.";
+    }
+  };
+
   const handleAuthSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        if (!auth) {
-          setAuthError("Firebase is not configured for this environment.");
-          return;
-        }
+    if (!auth) {
+      setAuthError("Firebase is not configured for this environment.");
+      return;
+    }
 
     event.preventDefault();
     setAuthError(null);
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
-    } catch {
-      try {
+    } catch (error) {
+      if (error instanceof FirebaseError && error.code === "auth/user-not-found") {
+        try {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Sign-in failed. Check credentials.";
-        setAuthError(message);
+          return;
+        } catch (createError) {
+          setAuthError(getAuthErrorMessage(createError));
+          return;
+        }
       }
+
+      setAuthError(getAuthErrorMessage(error));
     }
   };
 
