@@ -165,9 +165,15 @@ export default function Home() {
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (error) {
-      if (error instanceof FirebaseError && error.code === "auth/user-not-found") {
+      // Some Firebase projects return auth/invalid-credential for unknown users.
+      // We still allow first-login auto-creation to preserve onboarding behavior.
+      if (
+        error instanceof FirebaseError &&
+        (error.code === "auth/user-not-found" ||
+          error.code === "auth/invalid-credential")
+      ) {
         try {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
+          await createUserWithEmailAndPassword(auth, email.trim(), password);
           return;
         } catch (createError) {
           setAuthError(getAuthErrorMessage(createError));
