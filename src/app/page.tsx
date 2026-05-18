@@ -53,6 +53,17 @@ const defaultFormState: TemplateFormState = {
   sortOrder: 100,
 };
 
+const programIdOptions = [
+  { value: 'adult_kickboxing', label: 'Adult Kickboxing' },
+  { value: 'child_tkd', label: 'Child TKD' },
+];
+
+const levelOptions = [
+  { value: 'All levels', label: 'All levels' },
+  { value: 'Basics', label: 'Basics' },
+  { value: 'Intermediate/Advanced', label: 'Intermediate/Advanced' },
+];
+
 const dayOptions = [
   { value: 1, label: "Monday" },
   { value: 2, label: "Tuesday" },
@@ -334,15 +345,22 @@ export default function Home() {
                 />
               </label>
 
+
               <label>
                 Program ID
-                <input
+                <select
                   value={form.programId}
                   onChange={(e) =>
                     setForm({ ...form, programId: e.target.value })
                   }
                   required
-                />
+                >
+                  {programIdOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>
@@ -395,13 +413,20 @@ export default function Home() {
                 />
               </label>
 
+
               <label>
                 Level
-                <input
+                <select
                   value={form.level}
                   onChange={(e) => setForm({ ...form, level: e.target.value })}
                   required
-                />
+                >
+                  {levelOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>
