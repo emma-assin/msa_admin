@@ -73,11 +73,11 @@ const defaultFormState: TemplateFormState = {
 const programIdOptions = [
   { value: 'adult_kickboxing', label: 'Adult Kickboxing' },
   { value: 'child_tkd', label: 'Child TKD' },
+  { value: 'all_ages', label: 'All Ages' },
 ];
 
 const levelOptions = [
   { value: 'All levels', label: 'All levels' },
-  { value: 'All ages', label: 'All ages' },
   { value: 'Basics', label: 'Basics' },
   { value: 'Intermediate/Advanced', label: 'Intermediate/Advanced' },
 ];
