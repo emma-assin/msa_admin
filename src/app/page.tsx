@@ -1,44 +1,42 @@
+"use client";
+
+import { FirebaseError } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  type User,
+} from "firebase/auth";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+  type Timestamp,
+} from "firebase/firestore";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { auth, db, firebaseConfigError } from "@/lib/firebase";
+
 type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: Timestamp;
+  sortOrder: number;
+};
 
-  "use client";
+type AnnouncementFormState = Omit<Announcement, "id" | "createdAt">;
 
-  import { FirebaseError } from "firebase/app";
-  import {
-    createUserWithEmailAndPassword,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    signOut,
-    type User,
-  } from "firebase/auth";
-  import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    onSnapshot,
-    orderBy,
-    query,
-    updateDoc,
-    type Timestamp,
-  } from "firebase/firestore";
-  import { FormEvent, useEffect, useMemo, useState } from "react";
-  import { auth, db, firebaseConfigError } from "@/lib/firebase";
-
-  type Announcement = {
-    id: string;
-    title: string;
-    body: string;
-    createdAt: Timestamp;
-    sortOrder: number;
-  };
-
-  type AnnouncementFormState = Omit<Announcement, "id" | "createdAt">;
-
-  const defaultAnnouncementForm: AnnouncementFormState = {
-    title: "",
-    body: "",
-    sortOrder: 100,
-  };
+const defaultAnnouncementForm: AnnouncementFormState = {
+  title: "",
+  body: "",
+  sortOrder: 100,
+};
     }
   };
 
