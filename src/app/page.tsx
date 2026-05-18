@@ -1,3 +1,80 @@
+type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: Timestamp;
+  sortOrder: number;
+};
+
+type AnnouncementFormState = Omit<Announcement, "id" | "createdAt">;
+
+const defaultAnnouncementForm: AnnouncementFormState = {
+  title: "",
+  body: "",
+  sortOrder: 100,
+};
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormState>(defaultAnnouncementForm);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  // Announcements Firestore sync
+  useEffect(() => {
+    if (!isAdmin || !db) return;
+    const q = query(collection(db, "announcements"), orderBy("sortOrder"));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map((item) => {
+        const data = item.data() as Omit<Announcement, "id">;
+        return { id: item.id, ...data };
+      });
+      setAnnouncements(items);
+    });
+    return () => unsub();
+  }, [isAdmin]);
+
+  const resetAnnouncementForm = () => {
+    setAnnouncementForm(defaultAnnouncementForm);
+    setEditingAnnouncementId(null);
+  };
+
+  const handleSaveAnnouncement = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isAdmin || !db) return;
+    setSavingAnnouncement(true);
+    const payload = {
+      ...announcementForm,
+      title: announcementForm.title.trim(),
+      body: announcementForm.body.trim(),
+      createdAt: new Date(),
+    };
+    try {
+      if (editingAnnouncementId) {
+        await updateDoc(doc(db, "announcements", editingAnnouncementId), payload);
+      } else {
+        await addDoc(collection(db, "announcements"), payload);
+      }
+      resetAnnouncementForm();
+    } catch (error) {
+      // Optionally handle error
+    } finally {
+      setSavingAnnouncement(false);
+    }
+  };
+
+  const beginEditAnnouncement = (a: Announcement) => {
+    setEditingAnnouncementId(a.id);
+    setAnnouncementForm({
+      title: a.title,
+      body: a.body,
+      sortOrder: a.sortOrder,
+    });
+  };
+
+  const removeAnnouncement = async (id: string) => {
+    if (!isAdmin || !db) return;
+    try {
+      await deleteDoc(doc(db, "announcements", id));
+    } catch {}
+  };
 "use client";
 
 import { FirebaseError } from "firebase/app";
@@ -273,10 +350,69 @@ export default function Home() {
 
   return (
     <main className="page">
+
       <section className="card hero">
         <h1>MSA Schedule Admin</h1>
         <p>Web editor for recurring classes in Firestore.</p>
       </section>
+
+      {isAdmin && (
+        <section className="card">
+          <h2>{editingAnnouncementId ? "Edit Announcement" : "Add Announcement"}</h2>
+          <form className="form grid" onSubmit={handleSaveAnnouncement}>
+            <label>
+              Title
+              <input
+                value={announcementForm.title}
+                onChange={e => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Body
+              <textarea
+                value={announcementForm.body}
+                onChange={e => setAnnouncementForm({ ...announcementForm, body: e.target.value })}
+                required
+                rows={3}
+              />
+            </label>
+            <label>
+              Sort order
+              <input
+                type="number"
+                value={announcementForm.sortOrder}
+                onChange={e => setAnnouncementForm({ ...announcementForm, sortOrder: Number(e.target.value) })}
+                required
+              />
+            </label>
+            <div className="row">
+              <button type="submit" disabled={savingAnnouncement}>
+                {editingAnnouncementId ? "Save" : "Add"}
+              </button>
+              {editingAnnouncementId && (
+                <button type="button" onClick={resetAnnouncementForm}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+          <h3>Current Announcements</h3>
+          <ul>
+            {announcements.map(a => (
+              <li key={a.id} style={{ marginBottom: 8 }}>
+                <strong>{a.title}</strong> — {a.body}
+                <button style={{ marginLeft: 8 }} onClick={() => beginEditAnnouncement(a)}>
+                  Edit
+                </button>
+                <button style={{ marginLeft: 4 }} onClick={() => removeAnnouncement(a.id)}>
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {firebaseConfigError && (
         <section className="card">
