@@ -39,75 +39,7 @@ const defaultAnnouncementForm: AnnouncementFormState = {
   sortOrder: 100,
 };
 
-  const beginEditAnnouncement = (a: Announcement) => {
-    setEditingAnnouncementId(a.id);
-    setAnnouncementForm({
-      title: a.title,
-      body: a.body,
-      sortOrder: a.sortOrder,
-    });
-  };
 
-  const removeAnnouncement = async (id: string) => {
-    if (!isAdmin || !db) return;
-    try {
-      await deleteDoc(doc(db, "announcements", id));
-    } catch {}
-  };
-"use client";
-
-import { FirebaseError } from "firebase/app";
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  type User,
-} from "firebase/auth";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  updateDoc,
-  type Timestamp,
-} from "firebase/firestore";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-
-import { auth, db, firebaseConfigError } from "@/lib/firebase";
-
-type ScheduleTemplate = {
-  id: string;
-  title: string;
-  programId: string;
-  dayOfWeek: number;
-  startTime: string;
-  durationMinutes: number;
-  coach: string;
-  level: string;
-  location: string;
-  isActive: boolean;
-  sortOrder: number;
-  updatedAt?: Timestamp;
-};
-
-type TemplateFormState = Omit<ScheduleTemplate, "id" | "updatedAt">;
-
-const defaultFormState: TemplateFormState = {
-  title: "",
-  programId: "adult_kickboxing",
-  dayOfWeek: 1,
-  startTime: "7:00 PM",
-  durationMinutes: 60,
-  coach: "Coach Eddie Martin",
-  level: "All levels",
-  location: "MSA Brooklyn",
-  isActive: true,
-  sortOrder: 100,
-};
 
 const programIdOptions = [
   { value: 'adult_kickboxing', label: 'Adult Kickboxing' },
