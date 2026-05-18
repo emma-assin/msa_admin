@@ -32,13 +32,12 @@ type Announcement = {
 
 type AnnouncementFormState = Omit<Announcement, "id" | "createdAt">;
 
+
 const defaultAnnouncementForm: AnnouncementFormState = {
   title: "",
   body: "",
   sortOrder: 100,
 };
-    }
-  };
 
   const beginEditAnnouncement = (a: Announcement) => {
     setEditingAnnouncementId(a.id);
