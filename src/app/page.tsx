@@ -1,62 +1,64 @@
 type Announcement = {
-  id: string;
-  title: string;
-  body: string;
-  createdAt: Timestamp;
-  sortOrder: number;
-};
 
-type AnnouncementFormState = Omit<Announcement, "id" | "createdAt">;
+  "use client";
 
-const defaultAnnouncementForm: AnnouncementFormState = {
-  title: "",
-  body: "",
-  sortOrder: 100,
-};
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormState>(defaultAnnouncementForm);
-  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
-  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
-  // Announcements Firestore sync
-  useEffect(() => {
-    if (!isAdmin || !db) return;
-    const q = query(collection(db, "announcements"), orderBy("sortOrder"));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map((item) => {
-        const data = item.data() as Omit<Announcement, "id">;
-        return { id: item.id, ...data };
-      });
-      setAnnouncements(items);
-    });
-    return () => unsub();
-  }, [isAdmin]);
-
-  const resetAnnouncementForm = () => {
-    setAnnouncementForm(defaultAnnouncementForm);
-    setEditingAnnouncementId(null);
+  type Announcement = {
+    id: string;
+    title: string;
+    body: string;
+    createdAt: Timestamp;
+    sortOrder: number;
   };
 
-  const handleSaveAnnouncement = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!isAdmin || !db) return;
-    setSavingAnnouncement(true);
-    const payload = {
-      ...announcementForm,
-      title: announcementForm.title.trim(),
-      body: announcementForm.body.trim(),
-      createdAt: new Date(),
+  type AnnouncementFormState = Omit<Announcement, "id" | "createdAt">;
+
+  const defaultAnnouncementForm: AnnouncementFormState = {
+    title: "",
+    body: "",
+    sortOrder: 100,
+  };
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormState>(defaultAnnouncementForm);
+    const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+    const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+    // Announcements Firestore sync
+    useEffect(() => {
+      if (!isAdmin || !db) return;
+      const q = query(collection(db, "announcements"), orderBy("sortOrder"));
+      const unsub = onSnapshot(q, (snapshot) => {
+        const items = snapshot.docs.map((item) => {
+          const data = item.data() as Omit<Announcement, "id">;
+          return { id: item.id, ...data };
+        });
+        setAnnouncements(items);
+      });
+      return () => unsub();
+    }, [isAdmin]);
+
+    const resetAnnouncementForm = () => {
+      setAnnouncementForm(defaultAnnouncementForm);
+      setEditingAnnouncementId(null);
     };
-    try {
-      if (editingAnnouncementId) {
-        await updateDoc(doc(db, "announcements", editingAnnouncementId), payload);
-      } else {
-        await addDoc(collection(db, "announcements"), payload);
-      }
-      resetAnnouncementForm();
-    } catch (error) {
-      // Optionally handle error
-    } finally {
-      setSavingAnnouncement(false);
+
+    const handleSaveAnnouncement = async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+    };
+
+    const beginEditAnnouncement = (a: Announcement) => {
+      setEditingAnnouncementId(a.id);
+      setAnnouncementForm({
+        title: a.title,
+        body: a.body,
+        sortOrder: a.sortOrder,
+      });
+    };
+
+    const removeAnnouncement = async (id: string) => {
+      if (!isAdmin || !db) return;
+      try {
+        await deleteDoc(doc(db, "announcements", id));
+      } catch {}
+    };
     }
   };
 
