@@ -77,6 +77,7 @@ const programIdOptions = [
 
 const levelOptions = [
   { value: 'All levels', label: 'All levels' },
+  { value: 'All ages', label: 'All ages' },
   { value: 'Basics', label: 'Basics' },
   { value: 'Intermediate/Advanced', label: 'Intermediate/Advanced' },
 ];
