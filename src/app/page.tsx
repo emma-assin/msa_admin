@@ -32,10 +32,39 @@ type Announcement = {
 
 type AnnouncementFormState = Omit<Announcement, "id" | "createdAt">;
 
+type ScheduleTemplate = {
+  id: string;
+  title: string;
+  programId: string;
+  dayOfWeek: number;
+  startTime: string;
+  durationMinutes: number;
+  coach: string;
+  level: string;
+  location: string;
+  isActive: boolean;
+  sortOrder: number;
+  updatedAt?: Timestamp;
+};
+
+type TemplateFormState = Omit<ScheduleTemplate, "id" | "updatedAt">;
 
 const defaultAnnouncementForm: AnnouncementFormState = {
   title: "",
   body: "",
+  sortOrder: 100,
+};
+
+const defaultFormState: TemplateFormState = {
+  title: "",
+  programId: "adult_kickboxing",
+  dayOfWeek: 1,
+  startTime: "7:00 PM",
+  durationMinutes: 60,
+  coach: "Coach Eddie Martin",
+  level: "All levels",
+  location: "MSA Brooklyn",
+  isActive: true,
   sortOrder: 100,
 };
 
@@ -81,6 +110,13 @@ export default function Home() {
   const [form, setForm] = useState<TemplateFormState>(defaultFormState);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementForm, setAnnouncementForm] =
+    useState<AnnouncementFormState>(defaultAnnouncementForm);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<
+    string | null
+  >(null);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
 
   const isAdmin =
     !!user?.email && adminAllowlist.includes(user.email.toLowerCase());
@@ -122,9 +158,37 @@ export default function Home() {
     return () => unsub();
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin || !db) {
+      return;
+    }
+
+    const q = query(collection(db, "announcements"), orderBy("sortOrder"));
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        const items = snapshot.docs.map((item) => {
+          const data = item.data() as Omit<Announcement, "id">;
+          return { id: item.id, ...data };
+        });
+        setAnnouncements(items);
+      },
+      (error) => {
+        setDataError(error.message);
+      },
+    );
+
+    return () => unsub();
+  }, [isAdmin]);
+
   const resetForm = () => {
     setForm(defaultFormState);
     setEditingId(null);
+  };
+
+  const resetAnnouncementForm = () => {
+    setAnnouncementForm(defaultAnnouncementForm);
+    setEditingAnnouncementId(null);
   };
 
   const getAuthErrorMessage = (error: unknown) => {
@@ -218,6 +282,38 @@ export default function Home() {
     }
   };
 
+  const handleSaveAnnouncement = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isAdmin || !db) {
+      return;
+    }
+
+    setSavingAnnouncement(true);
+    setDataError(null);
+
+    const payload = {
+      title: announcementForm.title.trim(),
+      body: announcementForm.body.trim(),
+      sortOrder: announcementForm.sortOrder,
+      createdAt: new Date(),
+    };
+
+    try {
+      if (editingAnnouncementId) {
+        await updateDoc(doc(db, "announcements", editingAnnouncementId), payload);
+      } else {
+        await addDoc(collection(db, "announcements"), payload);
+      }
+      resetAnnouncementForm();
+    } catch (error) {
+      setDataError(
+        error instanceof Error ? error.message : "Could not save announcement.",
+      );
+    } finally {
+      setSavingAnnouncement(false);
+    }
+  };
+
   const beginEdit = (template: ScheduleTemplate) => {
     setEditingId(template.id);
     setForm({
@@ -256,6 +352,28 @@ export default function Home() {
       });
     } catch (error) {
       setDataError(error instanceof Error ? error.message : "Toggle failed.");
+    }
+  };
+
+  const beginEditAnnouncement = (item: Announcement) => {
+    setEditingAnnouncementId(item.id);
+    setAnnouncementForm({
+      title: item.title,
+      body: item.body,
+      sortOrder: item.sortOrder,
+    });
+  };
+
+  const removeAnnouncement = async (id: string) => {
+    if (!isAdmin || !db) {
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, "announcements", id));
+    } catch (error) {
+      setDataError(
+        error instanceof Error ? error.message : "Could not delete announcement.",
+      );
     }
   };
 
