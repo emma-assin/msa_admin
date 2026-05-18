@@ -2,6 +2,28 @@ type Announcement = {
 
   "use client";
 
+  import { FirebaseError } from "firebase/app";
+  import {
+    createUserWithEmailAndPassword,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    signOut,
+    type User,
+  } from "firebase/auth";
+  import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    orderBy,
+    query,
+    updateDoc,
+    type Timestamp,
+  } from "firebase/firestore";
+  import { FormEvent, useEffect, useMemo, useState } from "react";
+  import { auth, db, firebaseConfigError } from "@/lib/firebase";
+
   type Announcement = {
     id: string;
     title: string;
@@ -17,48 +39,6 @@ type Announcement = {
     body: "",
     sortOrder: 100,
   };
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormState>(defaultAnnouncementForm);
-    const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
-    const [savingAnnouncement, setSavingAnnouncement] = useState(false);
-    // Announcements Firestore sync
-    useEffect(() => {
-      if (!isAdmin || !db) return;
-      const q = query(collection(db, "announcements"), orderBy("sortOrder"));
-      const unsub = onSnapshot(q, (snapshot) => {
-        const items = snapshot.docs.map((item) => {
-          const data = item.data() as Omit<Announcement, "id">;
-          return { id: item.id, ...data };
-        });
-        setAnnouncements(items);
-      });
-      return () => unsub();
-    }, [isAdmin]);
-
-    const resetAnnouncementForm = () => {
-      setAnnouncementForm(defaultAnnouncementForm);
-      setEditingAnnouncementId(null);
-    };
-
-    const handleSaveAnnouncement = async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-    };
-
-    const beginEditAnnouncement = (a: Announcement) => {
-      setEditingAnnouncementId(a.id);
-      setAnnouncementForm({
-        title: a.title,
-        body: a.body,
-        sortOrder: a.sortOrder,
-      });
-    };
-
-    const removeAnnouncement = async (id: string) => {
-      if (!isAdmin || !db) return;
-      try {
-        await deleteDoc(doc(db, "announcements", id));
-      } catch {}
-    };
     }
   };
 
